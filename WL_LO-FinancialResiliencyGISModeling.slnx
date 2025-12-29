@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="JoinData/JoinData.pyproj" Type="888888a0-9f3d-457c-b088-3a5042f75d52" Id="442ff13c-c3fd-437c-bb87-94696d931132">
+    <Build Project="false" />
+  </Project>
+  <Project Path="LandValueAnalysis.Common/LandValueAnalysis.Common.csproj" />
+  <Project Path="LandValueAnalysis.Models/LandValueAnalysis.Models.csproj" />
+  <Project Path="LandValueAnalysis.Services/LandValueAnalysis.Services.csproj" />
+  <Project Path="LandValueAnalysis.ViewModels/LandValueAnalysis.ViewModels.csproj" />
+  <Project Path="LandValueAnalysis.Views/LandValueAnalysis.Views.csproj" />
+  <Project Path="LandValueScraper/LandValueScraper.csproj" />
+</Solution>

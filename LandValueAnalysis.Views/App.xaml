@@ -1,0 +1,9 @@
+﻿<Application x:Class="LandValueAnalysis.Views.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LandValueAnalysis.Views"
+             Startup="Application_Start">
+    <Application.Resources>
+         
+    </Application.Resources>
+</Application>

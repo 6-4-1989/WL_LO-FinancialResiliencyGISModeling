@@ -1,0 +1,196 @@
+﻿<UserControl x:Class="LandValueAnalysis.Views.Templates.MapView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:esri="http://schemas.esri.com/arcgis/runtime/2013"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LandValueAnalysis.Views.Templates"
+        xmlns:converters="clr-namespace:LandValueAnalysis.Views.Converters"
+        xmlns:viewModels="clr-namespace:LandValueAnalysis.ViewModels;assembly=LandValueAnalysis.ViewModels"
+        d:DataContext="{d:DesignInstance Type=viewModels:MapViewModel}"
+        Loaded="OnLoaded"
+        mc:Ignorable="d"
+        d:DesignHeight="768" d:DesignWidth="1024">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibility"/>
+        <converters:MapStringNameToMapEnum x:Key="TranslateToEnum"/>
+        <converters:MapBasemapStringToBasemapStyle x:Key="TranslateToStyle"/>
+        <converters:SingleValueMarginLeftFormatter x:Key="SingleValueMarginLeft"/>
+
+        <!--No hover buttons. Modifies the default template of the button-->
+        <Style x:Key="BetterHoverButton" TargetType="{x:Type Button}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Background" Value="Transparent"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border 
+                            Name="Border" 
+                            BorderBrush="{x:Null}"
+                            Background="{TemplateBinding Background}">
+                            <ContentPresenter 
+                                HorizontalAlignment="Center" 
+                                VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter 
+                                    TargetName="Border" 
+                                    Property="BorderBrush" 
+                                    Value="Transparent"/>
+                                <Setter
+                                    Property="Foreground"
+                                    Value="LightBlue"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </UserControl.Resources>
+    
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="4*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Row="0" 
+              Grid.Column="0"
+              Grid.ColumnSpan="2">
+
+            <esri:MapView
+                Name="MyMapView"
+                Map="{Binding CurrentMap}"
+                GeoViewTapped="MapView_GeoViewTapped">
+            </esri:MapView>
+
+            <Button 
+                ToolTip="Open Settings"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,5,10,0"
+                Width="36" 
+                Height="36"
+                Click="ChangeSettingsVisibility"
+                Style="{StaticResource BetterHoverButton}">
+
+                <Path 
+                    Data="M 6,12 L 30,12 M 6,18 L 30,18 M 6,24 L 30,24"
+                    StrokeThickness="2.5"
+                    Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                    IsHitTestVisible="True"/>
+
+                <Button.Triggers>
+                    <!--Slide out settings-->
+                    <EventTrigger RoutedEvent="Button.Click">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <ThicknessAnimation
+                                    Storyboard.TargetName="SettingsPanel"
+                                    Storyboard.TargetProperty="Margin"
+                                    From="{Binding ElementName=SettingsGrid, Path=ActualWidth, Converter={StaticResource SingleValueMarginLeft}}"
+                                    To="0,0,0,0"
+                                    Duration="0:0:0.2">
+                                </ThicknessAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    
+                    
+                </Button.Triggers>
+            </Button>
+        </Grid>
+        
+        <Grid Grid.Row="0" Grid.Column="1" Name="SettingsGrid">
+            <StackPanel 
+                Name="SettingsPanel"
+                Visibility="{Binding IsSettingsVisible, Converter={StaticResource BooleanToVisibility}}"
+                Background="White">
+
+                <Button 
+                    ToolTip="Close Settings"
+                    HorizontalAlignment="Right"
+                    Name="CloseButton"
+                    Margin="0,5,10,0"
+                    Width="36" 
+                    Height="36"
+                    Style="{StaticResource BetterHoverButton}">
+
+                    <!--Stream geometry for icon creation-->
+                    <Path
+                        Data="M 9,9 L 27,27 M 27,9 L 9,27"
+                        StrokeThickness="4" 
+                        Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        IsHitTestVisible="True"/>
+
+                    <!--Slide in settings-->
+                    <Button.Triggers>
+                        <EventTrigger RoutedEvent="Button.Click">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ThicknessAnimation
+                                        Storyboard.TargetName="SettingsPanel"
+                                        Storyboard.TargetProperty="Margin"
+                                        From="0,0,0,0"
+                                        To="{Binding ElementName=SettingsGrid, Path=ActualWidth, Converter={StaticResource SingleValueMarginLeft}}"
+                                        Duration="0:0:0.2"
+                                        FillBehavior="Stop"
+                                        Completed="ChangeSettingsVisibility">
+                                    </ThicknessAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Button.Triggers>
+                </Button>
+
+                <Label 
+                    Content="Settings"
+                    Margin="2,0,0,0"
+                    FontFamily="Sans Serif Collection"
+                    FontWeight="ExtraBold"
+                    Foreground="Black"
+                    FontSize="36"/>
+
+                <ComboBox 
+                    Name="LayerComboBox"
+                    Width="{Binding ElementName=SettingsGrid, Path=ActualWidth}"
+                    ItemsSource="{Binding DataViews}"
+                    SelectedItem="{Binding CurrentLayer,
+                        Mode=TwoWay,
+                        UpdateSourceTrigger=PropertyChanged}">
+
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource TranslateToEnum}}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+
+                </ComboBox>
+
+                <ComboBox 
+                    Name="BasemapComboBox"
+                    Width="{Binding ElementName=SettingsGrid, Path=ActualWidth}"
+                    ItemsSource="{Binding BasemapStyles}"
+                    SelectedItem="{Binding CurrentBasemapStyle,
+                        Mode=TwoWay,
+                        UpdateSourceTrigger=PropertyChanged}">
+
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource TranslateToStyle}}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

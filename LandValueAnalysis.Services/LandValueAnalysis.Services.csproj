@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\WestLinnLots.gpkg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\WestLinnLots.gpkg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Esri.ArcGISRuntime.WPF" Version="200.8.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageReference Include="Wacton.Unicolour" Version="6.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LandValueAnalysis.Common\LandValueAnalysis.Common.csproj" />
+    <ProjectReference Include="..\LandValueAnalysis.Models\LandValueAnalysis.Models.csproj" />
+  </ItemGroup>
+
+</Project>
