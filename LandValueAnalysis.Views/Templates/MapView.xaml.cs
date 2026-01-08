@@ -21,6 +21,8 @@ using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.Toolkit.UI.Controls;
 using System.Windows.Media.Animation;
+using LandValueAnalysis.Services.Factories;
+using LandValueAnalysis.Models.Shared;
 
 namespace LandValueAnalysis.Views.Templates;
 
@@ -105,5 +107,37 @@ public partial class MapView : UserControl
     private void ChangeSettingsVisibility(object sender, EventArgs e)
     {
         _mapViewModel.UpdateSettingsVisibility();
+    }
+
+    private async void On3DEnabled(object sender, EventArgs e)
+    {
+        try
+        {
+            await _mapViewModel.UpdateMapMode(MapMode.ThreeDimensional);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"3D Mapping Failed! {ex.ToString()}");
+        }
+    }
+    
+    private async void On3DDisabled(object sender, EventArgs e)
+    {
+        try
+        {
+            await _mapViewModel.UpdateMapMode(MapMode.TwoDimensional);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"2D Mapping Failed! {ex.ToString()}");
+        }
+    }
+
+    private void Map_ViewpointChanged(object sender, EventArgs e)
+    {
+        GeoView map = sender as GeoView;
+        Viewpoint currentViewpoint = map.GetCurrentViewpoint(ViewpointType.CenterAndScale);
+
+        _mapViewModel.CurrentViewpoint = currentViewpoint;
     }
 }

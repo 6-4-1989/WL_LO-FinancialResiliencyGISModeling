@@ -69,9 +69,16 @@
 
             <esri:MapView
                 Name="MyMapView"
-                Map="{Binding CurrentMap}"
-                GeoViewTapped="MapView_GeoViewTapped">
-            </esri:MapView>
+                Map="{Binding CurrentMapStatus.CurrentMap}"
+                GeoViewTapped="MapView_GeoViewTapped"
+                Visibility="{Binding IsTwoDimensional, Converter={StaticResource BooleanToVisibility}}"
+                ViewpointChanged="Map_ViewpointChanged"/>
+
+            <esri:SceneView
+                Name="MySceneView"
+                Scene="{Binding CurrentMapStatus.CurrentMap}"
+                Visibility="{Binding IsThreeDimensional, Converter={StaticResource BooleanToVisibility}}"
+                ViewpointChanged="Map_ViewpointChanged"/>
 
             <Button 
                 ToolTip="Open Settings"
@@ -190,6 +197,24 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+
+                <StackPanel
+                    Orientation="Horizontal"
+                    Background="White">
+
+                    <Label
+                        Content="Toggle 3D"
+                        FontFamily="Sans Serif Collection"
+                        FontSize="12"
+                        HorizontalAlignment="Center"/>
+                    <CheckBox
+                        Margin="0,0,2,0"
+                        HorizontalAlignment="Right"
+                        Checked="On3DEnabled"
+                        Unchecked="On3DDisabled"
+                        />
+                </StackPanel>
+                
             </StackPanel>
         </Grid>
     </Grid>

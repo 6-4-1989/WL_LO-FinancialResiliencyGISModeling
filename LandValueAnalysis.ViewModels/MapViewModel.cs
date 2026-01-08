@@ -3,9 +3,9 @@ using Esri.ArcGISRuntime.Mapping;
 using LandValueAnalysis.Common;
 using LandValueAnalysis.Models;
 using LandValueAnalysis.Services;
+using LandValueAnalysis.Models.Shared;
 using LandValueAnalysis.Services.Factories;
-using System.Windows.Input;
-using Esri.ArcGISRuntime.Mapping.Popups;
+using System.Diagnostics;
 
 namespace LandValueAnalysis.ViewModels;
 
@@ -15,8 +15,10 @@ public sealed class MapViewModel : BaseViewModel
     //Injections
     private readonly LayerFactory _layerFactory;
     private readonly NavigationService _navigationService;
+    private MapFactory _mapFactory;
 
     //backing fields
+    private MapStatus _currentMap;
     private DataView _currentLayer;
     private BasemapStyle _currentBasemap;
     private bool _isSettingsVisible;
@@ -42,7 +44,26 @@ public sealed class MapViewModel : BaseViewModel
         BasemapStyle.ArcGISDarkGray
     };
 
-    public Map CurrentMap { get; }
+    public bool IsSettingsVisible
+    {
+        get => _isSettingsVisible;
+        private set
+        {
+            _isSettingsVisible = value;
+            OnPropertyChanged();
+        }
+    }
+    public MapStatus CurrentMapStatus
+    {
+        get => _currentMap;
+        private set
+        {
+            _currentMap = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsThreeDimensional));
+            OnPropertyChanged(nameof(IsTwoDimensional));
+        }
+    }
     public DataView CurrentLayer
     {
         get => _currentLayer;
@@ -63,27 +84,18 @@ public sealed class MapViewModel : BaseViewModel
             OnPropertyChanged();
         }
     }
-    public bool IsSettingsVisible
-    {
-        get => _isSettingsVisible;
-        set
-        {
-            _isSettingsVisible = value;
-            OnPropertyChanged();
-        }
-    }
+    public Viewpoint CurrentViewpoint { get; set; }
 
-    public MapViewModel(LayerFactory layerFactory, NavigationService navigationService)
+    public bool IsThreeDimensional => CurrentMapStatus.CurrentMap is Scene;
+    public bool IsTwoDimensional => CurrentMapStatus.CurrentMap is Map;
+
+    public MapViewModel(LayerFactory layerFactory, NavigationService navigationService, MapFactory mapFactory)
     {
-        IsSettingsVisible = false;
-        CurrentMap = new Map(BasemapStyle.ArcGISImagery)
-        {
-            InitialViewpoint = new Viewpoint(new MapPoint(-122.636336, 45.367024, SpatialReferences.Wgs84), 10000)
-        };
         _layerFactory = layerFactory;
         _navigationService = navigationService;
+        _mapFactory = mapFactory;
 
-        InitializeDefaultsAsync();
+        InitializeDefaults();
     }
 
     //public methods
@@ -97,6 +109,18 @@ public sealed class MapViewModel : BaseViewModel
         _navigationService.Navigate<TViewModel>();
     }
 
+    public async Task UpdateMapMode(MapMode mapMode)
+    {
+        //Clear initial map's layers to prevent ownership issues
+        CurrentMapStatus.CurrentMap.OperationalLayers.Clear();
+
+        CurrentMapStatus = _mapFactory.Build(
+            mapMode,
+            CurrentViewpoint);
+        UpdateBasemap();
+        await UpdateLayerAsync();
+    }
+
     public override void Dispose()
     {
         GC.SuppressFinalize(this);
@@ -107,21 +131,35 @@ public sealed class MapViewModel : BaseViewModel
     //private methods
     private async Task UpdateLayerAsync()
     {
-        FeatureLayer newLayer = await _layerFactory.BuildAsync(CurrentLayer);
+        //Wrap in try catch since the Task return value is discarded in its calls
+        try
+        {
+            FeatureLayer newLayer = await _layerFactory.BuildAsync(CurrentLayer);
 
-        CurrentMap.OperationalLayers.Clear();
-        await newLayer.LoadAsync();
-        CurrentMap.OperationalLayers.Add(newLayer);
+            CurrentMapStatus.CurrentMap.OperationalLayers.Clear();
+            await newLayer.LoadAsync();
+            CurrentMapStatus.CurrentMap.OperationalLayers.Add(newLayer);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Adding layer to map failed! {ex.ToString()}");
+        }
     }
 
     private void UpdateBasemap()
     {
-        CurrentMap.Basemap = new Basemap(CurrentBasemapStyle);
+        CurrentMapStatus.CurrentMap.Basemap = new Basemap(CurrentBasemapStyle);
     }
 
-    private void InitializeDefaultsAsync()
+    private void InitializeDefaults()
     {
+        IsSettingsVisible = false;
+        CurrentMapStatus = _mapFactory.Build(
+            MapMode.TwoDimensional);
+
         CurrentBasemapStyle = BasemapStyle.ArcGISImagery;
         CurrentLayer = DataView.LotScale_LV_PerAcre;
+
+        CurrentViewpoint = new Viewpoint(new MapPoint(-122.636336, 45.367024, SpatialReferences.Wgs84), 10000);
     }
 }

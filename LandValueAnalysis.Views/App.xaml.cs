@@ -51,7 +51,8 @@ namespace LandValueAnalysis.Views
             serviceContainer.AddTransient<StatsViewModel>();
 
             //Services
-            serviceContainer.AddSingleton<LayerFactory>();
+            serviceContainer.AddTransient<LayerFactory>();
+            serviceContainer.AddTransient<MapFactory>();
             serviceContainer.AddSingleton<NavigationService>(x => new NavigationService(_serviceProvider));
 
             //View

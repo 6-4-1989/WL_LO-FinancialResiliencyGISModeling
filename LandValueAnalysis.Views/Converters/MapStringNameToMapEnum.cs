@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Windows.Data;
 using LandValueAnalysis.Services.Factories;
+using LandValueAnalysis.Models.Shared;
 
 namespace LandValueAnalysis.Views.Converters;
 

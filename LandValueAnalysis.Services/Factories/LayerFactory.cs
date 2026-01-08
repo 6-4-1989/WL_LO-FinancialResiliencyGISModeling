@@ -7,24 +7,12 @@ using System.Data;
 using System.Drawing;
 using System.Globalization;
 using Wacton.Unicolour;
+using LandValueAnalysis.Models.Shared;
 
 namespace LandValueAnalysis.Services.Factories;
 
-public enum DataView
-{
-    BuildingFootprint = 0,
-    LandValuePerAcre = 1,
-    NetInfrastructureDeficit = 2,
-    LandUseClassification = 3,
-    AverageBuildingFootprint = 4,
-    AverageLandValuePerAcre = 5,
-    LotScaleFootprints = 6,
-    LotScale_LV_PerAcre = 7,
-    Neighborhoods = 8
-}
-
 [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-public sealed class LayerFactory : IFactory<DataView, FeatureLayer>
+public sealed class LayerFactory
 {
     private record OklchColor
     (
@@ -99,15 +87,15 @@ public sealed class LayerFactory : IFactory<DataView, FeatureLayer>
         H: 264.57
     );
 
-    private static readonly ConcurrentDictionary<DataView, Lazy<Task<FeatureLayer>>> _defaultLayers =
-        new ConcurrentDictionary<DataView, Lazy<Task<FeatureLayer>>>();
+    private static readonly ConcurrentDictionary<Models.Shared.DataView, Lazy<Task<FeatureLayer>>> _defaultLayers =
+        new ConcurrentDictionary<Models.Shared.DataView, Lazy<Task<FeatureLayer>>>();
 
     public LayerFactory()
     {
         LoadDefaultLayers();
     }
 
-    public async Task<FeatureLayer> BuildAsync(DataView layerType)
+    public async Task<FeatureLayer> BuildAsync(Models.Shared.DataView layerType)
     {
         if (_defaultLayers.TryGetValue(layerType, out var layer))
         {
@@ -134,14 +122,14 @@ public sealed class LayerFactory : IFactory<DataView, FeatureLayer>
                 CreateLayerAsync(_neighborhoodPolygonsData, "net neighborhood infrastructure deficit ($)")
             )); */
         _defaultLayers.TryAdd(
-            DataView.LotScaleFootprints,
+            Models.Shared.DataView.LotScaleFootprints,
             new Lazy<Task<FeatureLayer>>(() =>
-                CreateLayerAsync(_lotData, 0, 1, _lotsFields, _lotsPopupTitle, "building footprint")
+                CreateLayerAsync(_lotData, 0, 1, _lotsFields, _lotsPopupTitle, "building footprint", "[building footprint] * 2000")
             ));
         _defaultLayers.TryAdd(
-            DataView.LotScale_LV_PerAcre,
+            Models.Shared.DataView.LotScale_LV_PerAcre,
             new Lazy<Task<FeatureLayer>>(() =>
-                CreateLayerAsync(_lotData, 0, 20000000, _lotsFields, _lotsPopupTitle, "land value/acre ($)")
+                CreateLayerAsync(_lotData, 0, 20000000, _lotsFields, _lotsPopupTitle, "land value/acre ($)", "[land value/acre ($)] / 10000")
             )); /*
         _defaultLayers.TryAdd(
             DataView.Neighborhoods,
@@ -151,7 +139,15 @@ public sealed class LayerFactory : IFactory<DataView, FeatureLayer>
     }
 
     //Takes in data source path, min max data bounds for rendering gradient, popup fields, popup title field, and field to render on
-    private async Task<FeatureLayer> CreateLayerAsync(string dataSource, int min, int max, PopupField[] popupFields, string popupTitleField, string renderingField = "")
+    private async Task<FeatureLayer> CreateLayerAsync(
+        string dataSource, 
+        int min, 
+        int max, 
+        PopupField[] popupFields, 
+        string popupTitleField, 
+        string renderingField = "", 
+        string extrusionExpression = ""
+        )
     {
         //Load data into table
         FeatureTable table = await LoadGeoPackageTable(dataSource);
@@ -179,7 +175,12 @@ public sealed class LayerFactory : IFactory<DataView, FeatureLayer>
                 .ToList();
 
             layer.Renderer = CreateRenderer(renderingField, uniqueValues, min, max);
-        } 
+
+            if (!string.IsNullOrEmpty(extrusionExpression))
+            {
+                ConfigureExtrusionExpression(layer.Renderer.SceneProperties, extrusionExpression);
+            }
+        }
         return layer;
     }
 
@@ -293,5 +294,15 @@ public sealed class LayerFactory : IFactory<DataView, FeatureLayer>
             C: _color1Oklch.C + normalizedValue * (_color2Oklch.C - _color1Oklch.C),
             H: (hue1 + normalizedValue * hueDifference + 360.0) % 360.0
         );
+    }
+
+    private RendererSceneProperties ConfigureExtrusionExpression(
+        RendererSceneProperties properties,
+        string extrusionExpression
+        )
+    {
+        properties.ExtrusionMode = ExtrusionMode.AbsoluteHeight;
+        properties.ExtrusionExpression = extrusionExpression;
+        return properties;
     }
 }
